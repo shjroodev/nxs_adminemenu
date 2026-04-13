@@ -1,0 +1,883 @@
+<html>
+
+<head>
+    <title></title>
+    <link rel="stylesheet" href="./css/style.css">
+    <style>
+        .logoOpzione { width:20px; height:20px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.45); transition:color 0.15s; flex-shrink:0; }
+        .logoOpzione svg { width:100%; height:100%; }
+        .opzione:hover .logoOpzione, .opzione.active .logoOpzione { color:rgba(255,255,255,0.85); }
+        .dh-kpi-icon { width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.7); flex-shrink:0; }
+        .dh-kpi-icon svg { width:22px; height:22px; }
+        .dh-stat-icon { width:18px; height:18px; flex-shrink:0; display:flex; align-items:center; }
+        .dh-stat-icon svg { width:100%; height:100%; }
+        .containerAzioni .azione { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; }
+        .azione .azioneIcon { width:28px; height:28px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.75); }
+        .azione .azioneIcon svg { width:100%; height:100%; }
+        .azione:hover .azioneIcon { color:#ffffff; }
+        .info span i { width:13px !important; height:13px !important; display:inline-flex !important; align-items:center; justify-content:center; background:none !important; color:rgba(255,255,255,0.3); }
+        .info span i svg { width:100%; height:100%; }
+        .info span:hover i { color:rgba(255,255,255,0.7); }
+        .refresh-btn { display:flex; align-items:center; justify-content:center; }
+        .refresh-icon { width:16px; height:16px; display:flex; }
+        .refresh-icon svg { width:100%; height:100%; }
+    </style>
+</head>
+
+<body>
+
+    <div id="app">
+
+        <div class="containerMenu">
+
+            <div class="bgcolor"></div>
+
+            <div class="leftBar">
+                <div class="serverLogo"></div>
+
+                <div class="containerOpzioni">
+                    <div @click="updateSelectedOption('dashboard')" id="opzionedashboard" class="opzione">
+                        <div class="logoOpzione" v-html="getSvgIcon('dashboard')"></div>
+                        <div class="nomeOpzione">{{this.config.lang.dashboard}}</div>
+                    </div>
+                    <div @click="updateSelectedOption('listaplayer')" id="opzionelistaplayer" class="opzione">
+                        <div class="logoOpzione" v-html="getSvgIcon('listaplayer')"></div>
+                        <div class="nomeOpzione">{{this.config.lang.lista_player}}</div>
+                    </div>
+                    <div @click="updateSelectedOption('menupersonale')" id="opzionemenupersonale" class="opzione">
+                        <div class="logoOpzione" v-html="getSvgIcon('menupersonale')"></div>
+                        <div class="nomeOpzione">{{this.config.lang.menu_personale}}</div>
+                    </div>
+                    <div @click="updateSelectedOption('listaban')" id="opzionelistaban" class="opzione">
+                        <div class="logoOpzione" v-html="getSvgIcon('listaban')"></div>
+                        <div class="nomeOpzione">{{this.config.lang.lista_ban}}</div>
+                    </div>
+                    <div @click="updateSelectedOption('gestionemeteo')" id="opzionegestionemeteo" class="opzione">
+                        <div class="logoOpzione" v-html="getSvgIcon('gestionemeteo')"></div>
+                        <div class="nomeOpzione">Gestisci Meteo</div>
+                    </div>
+                    <div @click="updateSelectedOption('risorse')" id="opzionerisorse" class="opzione">
+                        <div class="logoOpzione" v-html="getSvgIcon('risorse')"></div>
+                        <div class="nomeOpzione">{{this.config.lang.risorse}}</div>
+                    </div>
+                    <div @click="updateSelectedOption('gestioneutenti')" id="opzionegestioneutenti" class="opzione">
+                        <div class="logoOpzione" v-html="getSvgIcon('gestioneutenti')"></div>
+                        <div class="nomeOpzione">Gestione Utenti</div>
+                    </div>
+                    <div @click="close()" class="opzione">
+                        <div class="logoOpzione" v-html="getSvgIcon('esci')"></div>
+                        <div class="nomeOpzione">{{this.config.lang.esci}}</div>
+                    </div>
+                </div>
+            </div>
+
+            <transition name="opacity">
+                <div v-if="optionSelected=='dashboard'" class="paginaDestra dash-page">
+                    <div class="dh-hero">
+                        <div class="dh-hero-bg"></div>
+                        <div class="dh-hero-left">
+                            <div class="dh-greeting">{{this.config.lang.benvenuto}}</div>
+                            <div class="dh-name">{{this.infoStaff.name}}</div>
+                        </div>
+                        <div class="dh-hero-right">
+                            <div class="dh-rank">{{this.infoStaff.rankLabel}}</div>
+                            <div class="dh-clock">{{orario}}</div>
+                        </div>
+                    </div>
+                    <div class="dh-kpi-strip">
+                        <div v-for="v in infoDashboard" class="dh-kpi">
+                            <div class="dh-kpi-icon" v-html="getSvgIcon(v.id)"></div>
+                            <div class="dh-kpi-body">
+                                <div class="dh-kpi-num">{{getValue(v.id)}}</div>
+                                <div class="dh-kpi-label">{{v.label}}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dh-grid">
+                        <div class="dh-card dh-stats-card">
+                            <div class="dh-card-header">
+                                <span class="dh-card-title">Le Tue Statistiche</span>
+                                <span class="dh-card-sub">account personale</span>
+                            </div>
+                            <div class="dh-stats-list">
+                                <div class="dh-stat-row dh-stat-ban">
+                                    <div class="dh-stat-bar-track"><div class="dh-stat-bar" :style="{width: Math.min((infoStaff.ban ? infoStaff.ban.length : 0)*10,100)+'%'}"></div></div>
+                                    <div class="dh-stat-icon" v-html="getSvgIcon('stat-ban')"></div>
+                                    <div class="dh-stat-info">
+                                        <span class="dh-stat-name">Ban Emessi</span>
+                                    </div>
+                                    <div class="dh-stat-val">{{infoStaff.ban ? infoStaff.ban.length : 0}}</div>
+                                </div>
+                                <div class="dh-stat-row dh-stat-warn">
+                                    <div class="dh-stat-bar-track"><div class="dh-stat-bar" :style="{width: Math.min((infoStaff.warn ? infoStaff.warn.length : 0)*10,100)+'%'}"></div></div>
+                                    <div class="dh-stat-icon" v-html="getSvgIcon('stat-warn')"></div>
+                                    <div class="dh-stat-info">
+                                        <span class="dh-stat-name">Warn Emessi</span>
+                                    </div>
+                                    <div class="dh-stat-val">{{infoStaff.warn ? infoStaff.warn.length : 0}}</div>
+                                </div>
+                                <div class="dh-stat-row dh-stat-kick">
+                                    <div class="dh-stat-bar-track"><div class="dh-stat-bar" :style="{width: Math.min((infoStaff.kick ? infoStaff.kick.length : 0)*10,100)+'%'}"></div></div>
+                                    <div class="dh-stat-icon" v-html="getSvgIcon('stat-kick')"></div>
+                                    <div class="dh-stat-info">
+                                        <span class="dh-stat-name">Kick Emessi</span>
+                                    </div>
+                                    <div class="dh-stat-val">{{infoStaff.kick ? infoStaff.kick.length : 0}}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dh-card dh-ban-card">
+                            <div class="dh-card-header">
+                                <span class="dh-card-title">Ultimi Ban</span>
+                                <span class="dh-card-badge-red">{{listaBan.filter(b => b.valido).length}} attivi</span>
+                            </div>
+                            <div class="dh-ban-list">
+                                <div v-if="listaBan.length === 0" class="dh-empty">
+                                    <span>Nessun ban registrato</span>
+                                </div>
+                                <div v-for="ban in listaBan.slice().reverse().slice(0, 5)" class="dh-ban-row">
+                                    <div class="dh-ban-avatar">{{(ban.name || '?')[0].toUpperCase()}}</div>
+                                    <div class="dh-ban-body">
+                                        <div class="dh-ban-name">{{ban.name || 'Sconosciuto'}}</div>
+                                        <div class="dh-ban-reason">{{ban.reason || '—'}}</div>
+                                    </div>
+                                    <div class="dh-ban-meta">
+                                        <div class="dh-ban-date">{{ban.dataBan}}</div>
+                                        <div :class="['dh-ban-pill', ban.valido ? 'pill-red' : 'pill-grey']">
+                                            {{ban.valido ? (ban.permanente ? 'PERM' : ban.labelScadenza) : 'SCADUTO'}}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dh-card dh-players-card">
+                            <div class="dh-card-header">
+                                <span class="dh-card-title">Player Online</span>
+                                <span class="dh-online-dot-label"><span class="dh-online-dot"></span>{{listaPlayer.length}}</span>
+                            </div>
+                            <div class="dh-player-list">
+                                <div v-if="listaPlayer.length === 0" class="dh-empty"><span>Nessun player online</span></div>
+                                <div v-for="p in listaPlayer.slice(0, 6)" class="dh-player-row">
+                                    <div class="dh-player-id">#{{p.id}}</div>
+                                    <div class="dh-player-name">{{p.name}}</div>
+                                    <div class="dh-player-job">{{p.job ? p.job.label : '—'}}</div>
+                                    <div v-if="p.staff" class="dh-staff-chip">STAFF</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </transition>
+
+            <transition name="opacity">
+                <div v-if="optionSelected=='listaplayer'" class="paginaDestra">
+                    <input v-model="findbyname" type="text" :placeholder="this.config.lang.search_name"
+                        class="search_name">
+
+                    <div class="containerPlayer">
+                        <div @click="infoUser(v.id)" v-for="v in filterByName()" v-bind:style="setPlayerBg(v)"
+                            class="player">
+                            <div class="name">{{v.name}} - {{v.id}}</div>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+
+            <transition name="opacity">
+                <div v-if="optionSelected=='listaban'" class="paginaDestra">
+                    <input v-model="findbyidban" type="text" :placeholder="this.config.lang.search_id || 'Cerca per ID Ban, Nome Player o Staff...'"
+                        class="search_name" style="width: 300px; margin-bottom: 20px;">
+
+                    <div class="containerPlayer">
+                        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                <thead class="text-xs text-gray-700 uppercase bg-[#d8d8d80d] dark:text-gray-400">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">
+                                            {{this.config.lang.id_ban || 'ID Ban'}}
+                                        </th>
+                                        <th scope="col" class="px-6 py-3">
+                                            {{this.config.lang.nome_player || 'Nome Player'}}
+                                        </th>
+                                        <th scope="col" class="px-6 py-3">
+                                            {{this.config.lang.nome_staff || 'Nome Staff'}}
+                                        </th>
+                                        <th scope="col" class="px-6 py-3">
+                                            {{this.config.lang.motivo || 'Motivo'}}
+                                        </th>
+                                        <th scope="col" class="px-6 py-3">
+                                            {{this.config.lang.data || 'Data'}}
+                                        </th>
+                                        <th scope="col" class="px-6 py-3">
+                                            {{this.config.lang.scadenza || 'Scadenza'}}
+                                        </th>
+                                        <th scope="col" class="px-6 py-3">
+                                            {{this.config.lang.tipo || 'Tipo'}}
+                                        </th>
+                                        <th scope="col" class="px-6 py-3">
+                                            {{this.config.lang.stato || 'Stato'}}
+                                        </th>
+                                        <th scope="col" class="px-6 py-3">
+                                            {{this.config.lang.azioni || 'Azioni'}}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(v,k) in filterByIdBan()"
+                                        class="bg-white border-t dark:bg-[#d8d8d80d] dark:border-gray-700">
+                                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                            #{{v.idBan}}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            {{v.name}}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            {{v.staff.name}}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            {{v.reason}}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            {{v.dataBan}}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            {{v.labelScadenza}}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span v-if="v.permanente"
+                                                class="text-red-500 font-bold">{{config.lang.permanente || 'Permanente'}}</span>
+                                            <span v-else class="text-yellow-500">{{config.lang.temporaneo || 'Temporaneo'}}</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span v-if="!v.permanente && v.scadenza && new Date().getTime()/1000 > v.scadenza" 
+                                                  class="text-gray-400">{{config.lang.scaduto || 'Scaduto'}}</span>
+                                            <span v-else-if="v.permanente" class="text-red-500 font-bold">{{config.lang.attivo || 'Attivo'}}</span>
+                                            <span v-else class="text-green-500">{{config.lang.attivo || 'Attivo'}}</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <a v-if="(v.permanente || (v.scadenza && new Date().getTime()/1000 < v.scadenza))" 
+                                               @click="revocaBan(v.idBan)" href="#"
+                                               class="font-medium text-red-600 dark:text-red-500 hover:underline">
+                                                {{config.lang.revoca || 'Elimina'}}
+                                            </a>
+                                            <a v-else href="#" class="font-medium text-gray-400 dark:text-gray-500">
+                                                {{config.lang.no_azione || 'Nessuna azione'}}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="filterByIdBan().length === 0">
+                                        <td colspan="9" class="px-6 py-4 text-center text-gray-400">
+                                            Nessun ban trovato
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+
+            <transition name="opacity">
+                <div v-if="optionSelected=='menupersonale'" class="paginaDestra">
+                    <div class="containerInfoPlayer">
+                        <div class="logo">
+                            <div v-bind:style="setImageLogo(true)" class="logo2"></div>
+                        </div>
+                        <div class="info">
+                            <span style="font-size: 2.3148vh;">{{infoStaff.name}} - {{infoStaff.id}}</span>
+                            <span>{{infoStaff.rankLabel}}</span>
+                            <span>{{infoStaff.job ? infoStaff.job.label + ' - ' + infoStaff.job.grade_label : ''}}</span>
+                            <span>{{this.config.lang.discord}}{{infoStaff.license.discord}} <i @click="copy('discord', true)" v-html="getSvgIcon('copy')"></i></span>
+                            <span>{{this.config.lang.steam}}{{infoStaff.license.steam}} <i @click="copy('steam', true)" v-html="getSvgIcon('copy')"></i></span>
+                            <span>{{this.config.lang.license}}{{infoStaff.license.license}} <i @click="copy('license', true)" v-html="getSvgIcon('copy')"></i></span>
+                        </div>
+                    </div>
+
+                    <div class="containerAzioniPlayer">
+                        <div class="containerAzioni">
+
+                            <div v-if="!viewList && infoStaff.rank >= v.rank" @click="azione(v.id)"
+                                v-for="v in azioniPersonale" class="azione">
+                                <div class="azioneIcon" v-html="getSvgIcon(v.id)"></div>
+                                <div class="nomeAzione">{{v.label}}</div>
+                            </div>
+
+                        </div>
+
+                        <transition name="question">
+                            <div>
+                                <transition name="question-fade">
+                                    <div v-if="viewTwoQuestionInput" class="question"
+                                        v-bind:style="setQuestionInformation()">
+
+                                        <input v-if="this.questionInfo.input1.type!='select'"
+                                            :type="this.questionInfo.input1.type" class="value1"
+                                            :placeholder="this.questionInfo.input1.placeholder"
+                                            style="width: 100%; padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 14px; outline: none; margin-bottom: 15px;">
+
+                                        <select v-if="this.questionInfo.input1.type=='select'" class="value1"
+                                            style="width: 100%; padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 14px; outline: none; cursor: pointer; appearance: none; background-image: url(&quot;data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>&quot;); background-repeat: no-repeat; background-position: right 14px center; margin-bottom: 15px;">
+                                            <option disabled hidden selected>{{this.config.lang.seleziona_opzione}}
+                                            </option>
+                                            <option v-for="v in this.questionInfo.input1.options" :value="v.value">
+                                                {{v.label}}</option>
+                                        </select>
+                                        <br>
+                                        <input
+                                            v-if="this.questionInfo.input2 && this.questionInfo.input2.type!='select'"
+                                            :type="this.questionInfo.input2.type" class="value2"
+                                            :placeholder="this.questionInfo.input2.placeholder"
+                                            style="width: 100%; padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 14px; outline: none; margin-bottom: 25px;">
+                                        <br>
+                                        <div style="display: flex; gap: 12px; width: 100%;">
+                                            <div @click="closeQuestion()" class="cancel"
+                                                style="flex: 1; padding: 14px; text-align: center; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">
+                                                <span
+                                                    style="color: white; font-weight: 500; font-size: 14px;">{{this.config.lang.cancel}}</span>
+                                            </div>
+                                            <div @click="confirmAction()" class="confirm"
+                                                style="flex: 1; padding: 14px; text-align: center; border-radius: 10px; background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.9); cursor: pointer;">
+                                                <span
+                                                    style="color: #000; font-weight: 600; font-size: 14px;">{{this.config.lang.confirm}}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </transition>
+
+                                <transition name="question-fade">
+                                    <div v-if="viewOneQuestionInput" class="question"
+                                        v-bind:style="setQuestionInformation()">
+
+                                        <input v-if="this.questionInfo.input1.type!='select'"
+                                            :type="this.questionInfo.input1.type" class="value1"
+                                            :placeholder="this.questionInfo.input1.placeholder"
+                                            style="width: 100%; padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 14px; outline: none; margin-bottom: 25px;">
+
+                                        <select v-if="this.questionInfo.input1.type=='select'" class="value1"
+                                            style="width: 100%; padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 14px; outline: none; cursor: pointer; appearance: none; background-image: url(&quot;data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>&quot;); background-repeat: no-repeat; background-position: right 14px center; margin-bottom: 25px;">
+                                            <option disabled hidden selected>{{this.config.lang.seleziona_opzione}}
+                                            </option>
+                                            <option v-for="v in this.questionInfo.input1.options" :value="v.value">
+                                                {{v.label}}</option>
+                                        </select>
+                                        <br>
+                                        <div style="display: flex; gap: 12px; width: 100%;">
+                                            <div @click="closeQuestion()" class="cancel"
+                                                style="flex: 1; padding: 14px; text-align: center; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">
+                                                <span
+                                                    style="color: white; font-weight: 500; font-size: 14px;">{{this.config.lang.cancel}}</span>
+                                            </div>
+                                            <div @click="confirmAction()" class="confirm"
+                                                style="flex: 1; padding: 14px; text-align: center; border-radius: 10px; background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.9); cursor: pointer;">
+                                                <span
+                                                    style="color: #000; font-weight: 600; font-size: 14px;">{{this.config.lang.confirm}}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </transition>
+                            </div>
+                        </transition>
+                    </div>
+                </div>
+            </transition>
+
+            <transition name="opacity">
+                <div v-if="optionSelected=='infopersona'" class="paginaDestra">
+                    <div class="containerInfoPlayer">
+                        <div class="logo">
+                            <div @click="redirectPage(playerSelected.avatar)" v-bind:style="setImageLogo()"
+                                class="logo2"></div>
+                        </div>
+                        <div class="info">
+                            <span style="font-size: 2.3148vh;">{{playerSelected.name}} - {{playerSelected.id}}</span>
+                            <span>{{playerSelected.rankLabel}}</span>
+                            <span>{{playerSelected.job ? playerSelected.job.label + ' - ' + playerSelected.job.grade_label : ''}}</span>
+                            <span>{{this.config.lang.discord}}{{playerSelected.license.discord}} <i @click="copy('discord')" v-html="getSvgIcon('copy')"></i></span>
+                            <span>{{this.config.lang.steam}}{{playerSelected.license.steam}} <i @click="copy('steam')" v-html="getSvgIcon('copy')"></i></span>
+                            <span>{{this.config.lang.license}}{{playerSelected.license.license}} <i @click="copy('license')" v-html="getSvgIcon('copy')"></i></span>
+                        </div>
+                    </div>
+
+                    <div class="containerAzioniPlayer">
+
+                        <div class="containerAzioni">
+                            <div v-if="!viewList && infoStaff.rank >= v.rank" @click="azione(v.id)"
+                                v-for="v in azioni" class="azione">
+                                <div class="azioneIcon" v-html="getSvgIcon(v.id)"></div>
+                                <div class="nomeAzione">{{v.label}}</div>
+                            </div>
+
+                        </div>
+
+                        <transition name="question">
+                            <div>
+                                <transition name="question-fade">
+                                    <div v-if="viewTwoQuestionInput" class="question"
+                                        v-bind:style="setQuestionInformation()">
+
+                                        <input v-if="this.questionInfo.input1.type!='select'"
+                                            :type="this.questionInfo.input1.type" class="value1"
+                                            :placeholder="this.questionInfo.input1.placeholder"
+                                            style="width: 100%; padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 14px; outline: none; margin-bottom: 15px;">
+
+                                        <select v-if="this.questionInfo.input1.type=='select'" class="value1"
+                                            style="width: 100%; padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 14px; outline: none; cursor: pointer; appearance: none; background-image: url(&quot;data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>&quot;); background-repeat: no-repeat; background-position: right 14px center; margin-bottom: 15px;">
+                                            <option disabled hidden selected>{{this.config.lang.seleziona_opzione}}
+                                            </option>
+                                            <option v-for="v in this.questionInfo.input1.options" :value="v.value">
+                                                {{v.label}}</option>
+                                        </select>
+                                        <br>
+                                        <input
+                                            v-if="this.questionInfo.input2 && this.questionInfo.input2.type!='select'"
+                                            :type="this.questionInfo.input2.type" class="value2"
+                                            :placeholder="this.questionInfo.input2.placeholder"
+                                            style="width: 100%; padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 14px; outline: none; margin-bottom: 25px;">
+                                        <br>
+                                        <div style="display: flex; gap: 12px; width: 100%;">
+                                            <div @click="closeQuestion()" class="cancel"
+                                                style="flex: 1; padding: 14px; text-align: center; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">
+                                                <span
+                                                    style="color: white; font-weight: 500; font-size: 14px;">{{this.config.lang.cancel}}</span>
+                                            </div>
+                                            <div @click="confirmAction()" class="confirm"
+                                                style="flex: 1; padding: 14px; text-align: center; border-radius: 10px; background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.9); cursor: pointer;">
+                                                <span
+                                                    style="color: #000; font-weight: 600; font-size: 14px;">{{this.config.lang.confirm}}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </transition>
+
+                                <transition name="question-fade">
+                                    <div v-if="viewOneQuestionInput" class="question"
+                                        v-bind:style="setQuestionInformation()">
+
+                                        <input v-if="this.questionInfo.input1.type!='select'"
+                                            :type="this.questionInfo.input1.type" class="value1"
+                                            :placeholder="this.questionInfo.input1.placeholder"
+                                            style="width: 100%; padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 14px; outline: none; margin-bottom: 25px;">
+
+                                        <select v-if="this.questionInfo.input1.type=='select'" class="value1"
+                                            style="width: 100%; padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 14px; outline: none; cursor: pointer; appearance: none; background-image: url(&quot;data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>&quot;); background-repeat: no-repeat; background-position: right 14px center; margin-bottom: 25px;">
+                                            <option disabled hidden selected>{{this.config.lang.seleziona_opzione}}
+                                            </option>
+                                            <option v-for="v in this.questionInfo.input1.options" :value="v.value">
+                                                {{v.label}}</option>
+                                        </select>
+                                        <br>
+                                        <div style="display: flex; gap: 12px; width: 100%;">
+                                            <div @click="closeQuestion()" class="cancel"
+                                                style="flex: 1; padding: 14px; text-align: center; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">
+                                                <span
+                                                    style="color: white; font-weight: 500; font-size: 14px;">{{this.config.lang.cancel}}</span>
+                                            </div>
+                                            <div @click="confirmAction()" class="confirm"
+                                                style="flex: 1; padding: 14px; text-align: center; border-radius: 10px; background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.9); cursor: pointer;">
+                                                <span
+                                                    style="color: #000; font-weight: 600; font-size: 14px;">{{this.config.lang.confirm}}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </transition>
+                            </div>
+                        </transition>
+                    </div>
+                </div>
+            </transition>
+
+            <transition name="opacity">
+                <div v-if="optionSelected=='gestionemeteo'" class="paginaDestra">
+                    <div class="meteo-page-header">
+                        <div class="meteo-page-title">
+                            <div class="line"></div>
+                            <div class="welcome">GESTIONE TEMPO & METEO</div>
+                        </div>
+                        <div class="meteo-header-info">
+                            <div class="meteo-status-badge">
+                                <div class="status-dot" :class="{'active': !timeFreezed}"></div>
+                                <span>{{timeFreezed ? 'Tempo Bloccato' : 'Tempo in Esecuzione'}}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="meteo-container">
+                        
+                        <div class="meteo-section">
+                            <div class="section-header">
+                                <div class="section-icon">🕐</div>
+                                <div class="section-title">Controllo Orario</div>
+                            </div>
+                            
+                            <div class="meteo-time-card">
+                                <div class="meteo-time-display-compact">
+                                    <div class="time-info-full">
+                                        <div class="meteo-time-label-compact">Ora Server</div>
+                                        <div class="meteo-time-value-compact">{{formatTime(serverTime)}}</div>
+                                        <div class="meteo-time-period">{{getTimeOfDay(serverTime)}}</div>
+                                    </div>
+                                </div>
+
+                                <div class="meteo-slider-container-compact">
+                                    <div class="meteo-slider-wrapper">
+                                        <div class="time-markers">
+                                            <span>00:00</span>
+                                            <span>06:00</span>
+                                            <span>12:00</span>
+                                            <span>18:00</span>
+                                            <span>24:00</span>
+                                        </div>
+                                        <input 
+                                            type="range" 
+                                            v-model="serverTime" 
+                                            min="0" 
+                                            max="23" 
+                                            step="1"
+                                            @input="updateTimeSlider"
+                                            class="meteo-slider time-slider"
+                                        >
+                                        <div class="time-periods">
+                                            <div class="time-period dawn"></div>
+                                            <div class="time-period day"></div>
+                                            <div class="time-period sunset"></div>
+                                            <div class="time-period night"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="meteo-time-controls">
+                                    <button @click="toggleTimeFreeze()" class="control-btn" :class="{'active': timeFreezed}">
+                                        <div class="btn-icon">⏸️</div>
+                                        <div class="btn-text">{{timeFreezed ? 'Sblocca Tempo' : 'Blocca Tempo'}}</div>
+                                    </button>
+                                    
+                                    <button @click="syncRealTime()" class="control-btn">
+                                        <div class="btn-icon">🔄</div>
+                                        <div class="btn-text">Sincronizza Ora Reale</div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="meteo-section">
+                            <div class="section-header">
+                                <div class="section-icon">🌤️</div>
+                                <div class="section-title">Condizioni Atmosferiche</div>
+                                <div class="section-subtitle">Seleziona il tipo di meteo da applicare</div>
+                            </div>
+
+                            <div class="meteo-weather-grid-pro">
+                                <div 
+                                    v-for="weather in weatherTypes" 
+                                    :key="weather.id"
+                                    @click="selectWeather(weather.id)"
+                                    class="weather-card-pro"
+                                    :class="{'weather-active': currentWeather === weather.id}"
+                                >
+                                    <div class="weather-icon-pro">{{weather.icon}}</div>
+                                    <div class="weather-name-pro">{{weather.name}}</div>
+                                    <div class="weather-check" v-if="currentWeather === weather.id">✓</div>
+                                </div>
+                            </div>
+
+                            <div class="meteo-intensity-card">
+                                <div class="meteo-intensity-display-compact">
+                                    <div class="intensity-info-full">
+                                        <div class="meteo-intensity-label-compact">Intensità Meteo</div>
+                                        <div class="meteo-intensity-value-compact">{{Math.round(weatherIntensity * 100)}}%</div>
+                                        <div class="meteo-intensity-period">
+                                            <span v-if="weatherIntensity < 0.33">Leggera</span>
+                                            <span v-else-if="weatherIntensity < 0.66">Moderata</span>
+                                            <span v-else>Intensa</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="meteo-slider-container-compact">
+                                    <div class="meteo-slider-wrapper">
+                                        <div class="intensity-markers">
+                                            <span>0%</span>
+                                            <span>25%</span>
+                                            <span>50%</span>
+                                            <span>75%</span>
+                                            <span>100%</span>
+                                        </div>
+                                        <input 
+                                            type="range" 
+                                            v-model="weatherIntensity" 
+                                            min="0" 
+                                            max="1" 
+                                            step="0.01"
+                                            @input="updateWeatherIntensity"
+                                            class="meteo-slider intensity-slider"
+                                        >
+                                        <div class="intensity-periods">
+                                            <div class="intensity-period light"></div>
+                                            <div class="intensity-period moderate"></div>
+                                            <div class="intensity-period intense"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </transition>
+
+            <transition name="opacity">
+                <div v-if="optionSelected=='risorse'" class="paginaDestra">
+
+                    <div class="risorse-page-header">
+                        <div class="risorse-page-title">
+                            <div class="line"></div>
+                            <div class="welcome">{{this.config.lang.risorse}}</div>
+                        </div>
+                        <div class="risorse-header-actions">
+                            <div class="risorse-counter">
+                                <span>{{filteredResources().length}}</span> / {{resources.length}}
+                            </div>
+                            <input v-model="risorse_search" type="text" class="risorse-search" placeholder="Cerca risorsa...">
+                            <div @click="refreshResources()" class="refresh-btn" title="Aggiorna">
+                                <span class="refresh-icon" v-html="getSvgIcon('refresh')"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="risorse-container">
+                        <div class="console-box">
+                            <div class="console-header">Console</div>
+                            <div class="console-content" id="consoleContent">
+                                <div v-for="(log, idx) in consoleLogs" :key="idx" class="console-line">
+                                    <span class="console-name">{{log.name}}</span>
+                                    <span class="console-text"> › </span>
+                                    <span class="console-command">{{log.command}}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="resources-list">
+                            <div class="resource-header">
+                                <span style="flex: 1;">Risorsa</span>
+                                <span style="width: 90px; text-align: center;">Stato</span>
+                                <span style="width: 180px; text-align: flex-end;">Azioni</span>
+                            </div>
+                            <div class="resources-scroll">
+                                <div v-for="resource in filteredResources()" :key="resource.name" class="resource-item" :class="{
+                                    'resource-active': resource.state === 'started', 
+                                    'resource-inactive': resource.state === 'stopped',
+                                    'resource-loading': resource.state === 'starting' || resource.state === 'restarting' || resource.state === 'stopping'
+                                }">
+                                    <span class="resource-name">{{resource.name}}</span>
+                                    <span class="resource-status">
+                                        <span v-if="resource.state === 'started'" class="status-badge status-active">Attiva</span>
+                                        <span v-else-if="resource.state === 'starting'" class="status-badge status-loading">Avvio</span>
+                                        <span v-else-if="resource.state === 'stopping'" class="status-badge status-loading">Arresto</span>
+                                        <span v-else-if="resource.state === 'restarting'" class="status-badge status-loading">Riavvio</span>
+                                        <span v-else class="status-badge status-inactive">Ferma</span>
+                                    </span>
+                                    <div class="resource-actions">
+                                        <button v-if="resource.state !== 'started' && resource.state !== 'starting' && resource.state !== 'restarting'" @click="startResource(resource.name)" class="action-btn btn-start">
+                                            <span>Start</span>
+                                        </button>
+                                        <button v-if="resource.state === 'started'" @click="restartResource(resource.name)" class="action-btn btn-restart">
+                                            <span>Restart</span>
+                                        </button>
+                                        <button v-if="resource.state === 'started'" @click="stopResource(resource.name)" class="action-btn btn-stop">
+                                            <span>Stop</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+
+            <transition name="opacity">
+                <div v-if="optionSelected=='gestioneutenti'" class="paginaDestra">
+                    
+                    <div class="risorse-page-header">
+                        <div class="risorse-page-title">
+                            <div class="line"></div>
+                            <div class="welcome">Gestione Utenti</div>
+                        </div>
+                        <div class="risorse-header-actions">
+                            <div class="risorse-counter">
+                                <span>{{filteredUsers().length}}</span> / {{allUsers.length}}
+                            </div>
+                            <input v-model="users_search" type="text" class="risorse-search" placeholder="Cerca utente...">
+                            <div @click="refreshUsers()" class="refresh-btn" title="Aggiorna">
+                                <span class="refresh-icon" v-html="getSvgIcon('refresh')"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="users-container">
+                        <div class="users-list">
+                            <div class="user-header">
+                                <span style="flex: 1;">Nome Steam</span>
+                                <span style="width: 150px; text-align: center;">Grado Attuale</span>
+                                <span style="width: 200px; text-align: center;">Azioni</span>
+                            </div>
+                            <div class="users-scroll">
+                                <div v-for="user in filteredUsers()" :key="user.identifier" class="user-item">
+                                    <span class="user-name">{{user.name}}</span>
+                                    <span class="user-group">
+                                        <span class="group-badge">{{getGroupLabel(user.group)}}</span>
+                                    </span>
+                                    <div class="user-actions">
+                                        <select 
+                                            v-model="user.selectedGroup" 
+                                            @change="changeUserGroup(user.identifier, user.selectedGroup)"
+                                            class="group-select">
+                                            <option v-for="group in adminGroups" :key="group.value" :value="group.value">
+                                                {{group.label}}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </transition>
+        </div>
+        <transition name="opacity">
+            <div v-if="showInventoryModal" class="inv-modal-backdrop" @click.self="closeInventory()" @click.stop>
+                <div class="inv-modal" @click.stop>
+                    <div class="inv-modal-header">
+                        <span class="inv-modal-title">
+                            {{ config.lang && config.lang.viewinventory_title ? config.lang.viewinventory_title : 'Inventario di' }}
+                            <strong>{{ inventoryPlayerName }}</strong>
+                        </span>
+                        <span class="inv-modal-close" @click="closeInventory()">✕</span>
+                    </div>
+                    <div class="inv-modal-body">
+                        <div v-if="inventoryData.length === 0" class="inv-empty">
+                            Inventario vuoto
+                        </div>
+                        <div v-else class="inv-grid">
+                            <div v-for="item in inventoryData" :key="item.name" class="inv-item">
+                                <div class="inv-item-name">{{ item.label || item.name }}</div>
+                                <div class="inv-item-meta">
+                                    <span class="inv-item-id">{{ item.name }}</span>
+                                    <span class="inv-item-count">x{{ item.count }}</span>
+                                </div>
+                                <div v-if="item.weight > 0" class="inv-item-weight">{{ item.weight }}kg</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+    </div>
+
+    <script src='https://code.jquery.com/jquery-3.1.1.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js'></script>
+    <script src='https://cdn.tailwindcss.com'></script>
+    <script src="./js/script.js"></script>
+
+    <style>
+        
+        .inv-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.72);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .inv-modal {
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            width: 640px;
+            max-height: 72vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+        }
+        .inv-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 22px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .inv-modal-title {
+            color: rgba(255,255,255,0.85);
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .inv-modal-title strong {
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .inv-modal-close {
+            color: rgba(255,255,255,0.45);
+            font-size: 18px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .inv-modal-close:hover { color: #fff; }
+        .inv-modal-body {
+            overflow-y: auto;
+            padding: 18px 22px;
+        }
+        .inv-empty {
+            text-align: center;
+            color: rgba(255,255,255,0.35);
+            font-size: 14px;
+            padding: 32px 0;
+        }
+        .inv-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .inv-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .inv-item-name {
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .inv-item-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .inv-item-id {
+            color: rgba(255,255,255,0.35);
+            font-size: 10px;
+        }
+        .inv-item-count {
+            color: #7eaaff;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .inv-item-weight {
+            color: rgba(255,255,255,0.28);
+            font-size: 10px;
+        }
+    </style>
+</body>
+
+</html>
